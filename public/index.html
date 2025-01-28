@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capture Photo</title>
+  <style>
+    #camera {
+      width: 100%;
+      height: auto;
+      border: 1px solid black;
+    }
+    #photo {
+      margin-top: 20px;
+      border: 1px solid black;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Capturing Photo...</h1>
+  <video id="camera" autoplay></video>
+  <canvas id="photo"></canvas>
+
+  <script>
+    // Access the user's webcam
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('photo');
+    const context = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => console.log('Error accessing webcam: ', err));
+
+    // Function to take a snapshot
+    function takePhoto() {
+      // Draw the current frame from the webcam to the canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert the image to a data URL (base64)
+      const photoData = canvas.toDataURL('image/jpeg');
+      
+      // Send the photo to the server
+      sendPhotoToServer(photoData);
+    }
+
+    // Trigger the photo capture immediately
+    setTimeout(takePhoto, 1000);
+
+    // Function to send the photo to the backend
+    function sendPhotoToServer(photoData) {
+      const payload = { photo: photoData };
+
+      console.log('Sending photo data to the server:', payload);
+
+      fetch('/api/send-photo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', // Ensure the correct header
+        },
+        body: JSON.stringify(payload), // Stringify the JSON object
+      })
+      .then(response => response.json())  // Ensure the response is parsed as JSON
+      .then(data => {
+        if (data.success) {
+          alert('Photo sent successfully!');
+        } else {
+          alert('Failed to send photo.');
+        }
+      })
+      .catch(err => {
+        alert('Error sending photo: ' + err);
+      });
+    }
+  </script>
+</body>
+</html>
